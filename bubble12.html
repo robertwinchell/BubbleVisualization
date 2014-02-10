@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=UTF-8">
+    <title>bubble chart</title>
+    <!-- Include Twitter Bootstrap and jQuery: -->
+    <link rel="stylesheet" href="css/bootstrap.css" type="text/css"/>
+    <link rel="stylesheet" href="css/bootstrap-multiselect.css" type="text/css"/>
+    <link rel="stylesheet" href="css/pretify.css" type="text/css"/>
+    <link rel="stylesheet" href="css/tablecloth.css" type="text/css">
+    <link rel="stylesheet" href="js/d3js/lib/colorbrewer/colorbrewer.css" type="text/css">
+    <!-- Font-Awesome CSS -->
+    <link rel="stylesheet" href="font-awesome/css/font-awesome.min.css">
+
+
+    <!-- Include the multiselect plugin's CSS and JS: -->
+    <script src="js/d3js/d3.v3.min.js"></script>
+    <script src="js/d3js/lib/colorbrewer/colorbrewer.js"></script>
+    <script src="js/jquery-1.9.1.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/bootstrap-multiselect.js"></script>
+    <script src="js/jquery.metadata.js"></script>
+    <script src="js/jquery.tablesorter.min.js"></script>
+    <script src="js/jquery.tablecloth.js"></script>
+    <style>
+
+        <!-- sets the text inside the bubbles -->
+        text {
+            font: 10px sans-serif;
+        }
+
+        .panel-heading .accordion-toggle:after {
+            /* symbol for "opening" panels */
+            font-family: 'Glyphicons Halflings';  /* essential for enabling glyphicon */
+            content: "\e114";    /* adjust as needed, taken from bootstrap.css */
+            float: right;        /* adjust as needed */
+            color: grey;         /* adjust as needed */
+        }
+        .panel-heading .accordion-toggle.collapsed:after {
+            /* symbol for "collapsed" panels */
+            content: "\e080";    /* adjust as needed, taken from bootstrap.css */
+        }
+
+        .row {
+            margin: 0px;
+        }
+
+        .multiselect-container {
+
+        }
+
+    </style>
+</head>
+<body>
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#filter">
+                <span class="sr-only">Toggle Filters</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <div class="btn btn-default">Show Filters</div>&nbsp;
+        </div>
+        <div class="navbar-content" id="filter">
+            <ul class="nav navbar-nav">
+                <li>
+                    <div class="form-group">
+                        <label>Regions:</label>
+                        <select multiple="multiple" size="4" id="regions" class="form-control">
+                        </select>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-group">
+                        <div><label>Countries:</label></div>
+                        <select multiple="multiple" id="countries" class="form-control">
+                        </select>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-group">
+                        <div><label>Submission Year:</label></div>
+                        <select multiple="multiple" id="years" class="form-control">
+                        </select>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-group">
+                        <div><label>Disciplines:</label></div>
+                        <select multiple="multiple" id="disciplines" class="form-control">
+                        </select>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-group">
+                        <div><label>Destination Institute:</label></div>
+                        <select multiple="multiple" id="targets" class="form-control">
+                        </select>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-group">
+                        <div><label>Starting Institute:</label></div>
+                        <select multiple="multiple" id="sources"  >
+                        </select>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-group">
+                        <div><label>Schemes:</label></div>
+                        <select multiple="multiple" id="schemes" class="form-control">
+                        </select>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-group">
+                        <div><label>Colors:</label></div>
+                        <select class="form-control" id="colors">
+                            <option value="1">Greens</option>
+                            <option value="2">Blues</option>
+                            <option value="3">Reds</option>
+                            <option value="4" selected>Oranges</option>
+                            <option value="5">Purples to Blues</option>
+                        </select>
+                    </div>
+                </li>
+
+            </ul>
+        </div>
+    </nav>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="row">
+                    <div class="col-sm-2">
+                        <div class="row">
+                            <div class="panel-group" id="accordion">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h4 class="panel-title">
+                                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseDim">
+                                                Dimension
+                                            </a>
+                                        </h4>
+                                    </div>
+                                    <div id="collapseDim" class="panel-collapse collapse in">
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <select id="dimensions">
+                                                    <option value="year" selected>Submission Year</option>
+                                                    <option value="discipline">Main Discipline</option>
+                                                    <option value="scheme">Scheme</option>
+                                                    <option value="source">Starting Institute</option>
+                                                </select>
+                                                <div id="dimData"></div>
+                                                <div>
+                                                    <button class="btn btn-default" onclick="animateDimensionData();">Show Animation...</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <button class="button btn-default btn-lg" onclick="refreshView();">Refresh</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="panel-group" id="accordion1">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h4 class="panel-title">
+                                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion1" href="#collapseData">
+                                                Selected Items
+                                            </a>
+                                        </h4>
+                                    </div>
+                                    <div id="collapseData" class="panel-collapse">
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <div id="foTableUni" ></div>
+                                                <div id="foTableAmericas" ></div>
+                                                <div id="foTableEurope" ></div>
+                                                <div id="foTableAsia" ></div>
+                                                <div id="foTableAfrica" ></div>
+                                                <div id="foTableSwitzerland" ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h4 class="panel-title">
+                                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion1" href="#collapseSmall">
+                                                Small Sites (not displayed)
+                                            </a>
+                                        </h4>
+                                    </div>
+                                    <div id="collapseSmall" class="panel-collapse">
+                                        <div class="panel-body">
+                                            <label for="smallSize">Exclude where fewer than</label>
+                                            <input type="number" id="minSize" value="6"/>
+                                            <div class="row">
+                                                <div id="smallTableAmericas" ></div>
+                                                <div id="smallTableEurope" ></div>
+                                                <div id="smallTableAsia" ></div>
+                                                <div id="smallTableAfrica" ></div>
+                                                <div id="smallTableSwitzerland" ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class='row'>
+                                <div class='col-sm-2'><h4>Student Data</h4></div>
+                                <div class='col-sm-10' id="bc"></div>
+                            </div>
+                            <div class='row'>
+                                <div class='col-sm-1'><h4>Dimension</h4></div>
+                                <div class='col-sm-1' id="dimName"></div>
+                                <div class='col-sm-9' id="dimVal"></div>
+                                <div class='col-sm-1'>
+                                    <button class="btn btn-default" onclick="reset('All');">Reset Regions</button>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div id="infoAmericas">
+                                </div>
+                                <div id="visAmericas"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="infoEurope">
+                                </div>
+                                <div id="visEurope"></div>
+                                <div id="visSwitzerland"></div>
+                            </div>
+                            <div class="col-md-2">
+                                <div id="infAsia">
+                                </div>
+                                <div id="visAsia"></div>
+                                <div id="visAfrica"></div>
+                                <div id="infoAfrica">
+                                </div>
+                            </div>    
+                            <h4>Selection:&nbsp;<span id="selectedUni"></span></h4>
+                            <div id="unis"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+
+                                                        // setup script variables    
+                                                        var americas = [0, 0, 581, 515];
+                                                        var europe = [0, 0, 377, 435];
+                                                        var asia = [0, 0, 173, 227];
+                                                        var africa = [0, 0, 173, 227];
+                                                        var switzerland = [0, 0, 377, 84];
+
+                                                        var regions = ["Americas", "Europe", "Asia", "Africa", "Switzerland"];
+
+
+                                                        var width = 960 * .7,
+                                                                height = 640 * .7,
+                                                                zoomFactor = 1,
+                                                                bubble,
+                                                                breadcrumb,
+                                                                div,
+                                                                svgAmericas, svgEurope, svgAsia, svgAfrica, svgSwitzerland,
+                                                                selectedItem = new Object(),
+                                                                root,
+                                                                format = d3.format(",d"),
+                                                                color = d3.scale.category20();
+
+                                                        var colorArc, domainArray = [];
+
+
+                                                        //                                        var colorArc = d3.scale.category10();
+
+
+                                                        // another go at getting zoom to work    
+                                                        var zoom = d3.behavior.zoom()
+                                                                .scaleExtent([1, 10]);
+
+                                                        // jquery on load
+                                                        $(document).ready(function() {
+                                                            // get the studnet data without any filters
+                                                            getData("");
+                                                            
+                                                            $('.navbar-header').on("click", function() {$('.navbar-content').toggle('slow')})
+                                                            $('.navbar-header').click();
+                                                            // get the source values for the filter "select" controls
+                                                            setupFilters();
+
+
+                                                        });
+
+                                                        // setup the various filter controls
+                                                        function setupFilters() {
+                                                            // get hte core set of filters
+                                                            getFilters();
+
+                                                            // get the base data for the filters that can be dependent on other selections
+                                                            // eg countries starts as a full list but then is filtered if a region is selected
+                                                            getCountries("");
+                                                            getTarget("");
+                                                            getSource("");
+                                                        }
+
+
+
+                                                        // create the main bubble chart
+                                                        function setupBubble(region) {
+
+
+
+                                                            if (region == "Americas") {
+                                                                vis = "#visAmericas";
+                                                                dims = americas;
+                                                                // clear the chart each time the data is reloaded
+                                                                $(vis).empty();
+
+                                                                // create the basic svg canvas
+                                                                svgAmericas = d3.select(vis).append("svg")
+                                                                        .attr("x", dims[0])
+                                                                        .attr("y", dims[1])
+                                                                        .attr("width", dims[2])
+                                                                        .attr("height", dims[3])
+                                                                        .attr("class", "bubble");
+
+                                                                /*svgAmericas.append("foreignObject")
+                                                                 .attr("x", 0)
+                                                                 .attr("y", 0)
+                                                                 .attr("width", 240)
+                                                                 .attr("height", 300)
+                                                                 .append("xhtml:div")
+                                                                 .attr("style", "width:260px;height:300px; overflow: auto;")
+                                                                 .attr("id", "foTableAmericas");
+                                                                 */
+                                                            }
+                                                            if (region == "Europe") {
+                                                                vis = "#visEurope";
+                                                                dims = europe;
+                                                                // clear the chart each time the data is reloaded
+                                                                $(vis).empty();
+
+                                                                // create the basic svg canvas
+                                                                svgEurope = d3.select(vis).append("svg")
+                                                                        .attr("x", dims[0])
+                                                                        .attr("y", dims[1])
+                                                                        .attr("width", dims[2])
+                                                                        .attr("height", dims[3])
+                                                                        .attr("class", "bubble");
+
+                                                                /*svgEurope.append("foreignObject")
+                                                                 .attr("x", 0)
+                                                                 .attr("y", 0)
+                                                                 .attr("width", 240)
+                                                                 .attr("height", 300)
+                                                                 .append("xhtml:div")
+                                                                 .attr("style", "width:260px;height:300px; overflow: auto;")
+                                                                 .attr("id", "foTableEurope");
+                                                                 */
+                                                            }
+                                                            if (region == "Asia") {
+                                                                vis = "#visAsia";
+                                                                dims = asia;
+                                                                // clear the chart each time the data is reloaded
+                                                                $(vis).empty();
+
+                                                                // create the basic svg canvas
+                                                                svgAsia = d3.select(vis).append("svg")
+                                                                        .attr("x", dims[0])
+                                                                        .attr("y", dims[1])
+                                                                        .attr("width", dims[2])
+                                                                        .attr("height", dims[3])
+                                                                        .attr("class", "bubble");
+
+                                                                /*svgAsia.append("foreignObject")
+                                                                 .attr("x", 0)
+                                                                 .attr("y", 0)
+                                                                 .attr("width", 240)
+                                                                 .attr("height", 300)
+                                                                 .append("xhtml:div")
+                                                                 .attr("style", "width:260px;height:300px; overflow: auto;")
+                                                                 .attr("id", "foTableAsia");
+                                                                 */
+
+                                                            }
+                                                            if (region == "Africa") {
+                                                                vis = "#visAfrica";
+                                                                dims = africa;
+                                                                // clear the chart each time the data is reloaded
+                                                                $(vis).empty();
+
+                                                                // create the basic svg canvas
+                                                                svgAfrica = d3.select(vis).append("svg")
+                                                                        .attr("x", dims[0])
+                                                                        .attr("y", dims[1])
+                                                                        .attr("width", dims[2])
+                                                                        .attr("height", dims[3])
+                                                                        .attr("class", "bubble");
+
+                                                                svgAfrica.append("foreignObject")
+                                                                        .attr("x", 0)
+                                                                        .attr("y", 0)
+                                                                        .attr("width", 240)
+                                                                        .attr("height", 300)
+                                                                        .append("xhtml:div")
+                                                                        .attr("style", "width:260px;height:300px; overflow: auto;")
+                                                                        .attr("id", "foTableAfrica");
+
+
+                                                            }
+                                                            if (region == "Switzerland") {
+                                                                vis = "#visSwitzerland";
+                                                                dims = switzerland;
+                                                                // clear the chart each time the data is reloaded
+                                                                $(vis).empty();
+
+                                                                // create the basic svg canvas
+                                                                svgSwitzerland = d3.select(vis).append("svg")
+                                                                        .attr("x", dims[0])
+                                                                        .attr("y", dims[1])
+                                                                        .attr("width", dims[2])
+                                                                        .attr("height", dims[3])
+                                                                        .attr("class", "bubble");
+
+                                                                svgSwitzerland.append("foreignObject")
+                                                                        .attr("x", 0)
+                                                                        .attr("y", 0)
+                                                                        .attr("width", 240)
+                                                                        .attr("height", 300)
+                                                                        .append("xhtml:div")
+                                                                        .attr("style", "width:260px;height:300px; overflow: auto;")
+                                                                        .attr("id", "foTableSwitzerland");
+
+                                                            }
+
+
+                                                            bubble = d3.layout.pack()
+                                                                    .sort(function comparator(a, b) {
+                                                                // order the bubbles based on their type (world, region, country, uni)
+                                                                return b.type - a.type;
+                                                            })
+                                                                    .size([dims[2], dims[3]])
+                                                                    .padding(1.5);
+
+
+
+
+
+                                                        }
+
+                                                        function getArc(node) {
+
+                                                            j = 0;
+                                                            dimension = $('#dimensions').val();
+                                                            if (dimension == "year") {
+                                                                dimSel = $('#years option:selected').length
+                                                                dimMax = $('#years option').length;
+                                                            }
+                                                            if (dimension == "source") {
+                                                                dimSel = $('#sources option:selected').length
+                                                                dimMax = $('#sources option').length;
+                                                            }
+                                                            if (dimension == "scheme") {
+                                                                dimSel = $('#schemes option:selected').length
+                                                                dimMax = $('#schemes option').length;
+                                                            }
+                                                            if (dimension == "discipline") {
+                                                                dimSel = $('#disciplines option:selected').length
+                                                                dimMax = $('#disciplines option').length - 1;
+                                                            }
+
+
+                                                            if (dimSel > 0 && dimSel < dimMax) {
+                                                                dimNum = dimSel;
+                                                            } else {
+                                                                dimNum = dimMax;
+                                                            }
+
+
+
+                                                            while (j < dimNum) {
+                                                                //        console.log(j);
+                                                                arc = d3.svg.arc()
+                                                                        .innerRadius(function(d, i) {
+                                                                    if (j == 0 || j >= d.values.length) {
+                                                                        if (j == 0) {
+                                                                            console.log(d.values[j].cumValue + ":" + d.itemName);
+//                                                                            console.log(Math.min(5,d.value));
+                                                                            return Math.min(5,d.values[j].cumValue);
+                                                                        }
+                                                                    } else {
+                                                                        if (d.type == "world") {
+                                                                            return d.r * (d.values[j - 1].cumValue / 10 / d.value);
+                                                                        } else {
+                                                                            return d.r * (d.values[j - 1].cumValue / d.value);
+                                                                        }
+                                                                    }
+                                                                })
+                                                                        .outerRadius(function(d, i) {
+                                                                    if (j >= d.values.length) {
+                                                                        return 0;
+                                                                    } else {
+                                                                        if (d.type == "world") {
+                                                                            return d.r * (d.values[j].cumValue / 10 / d.value);
+                                                                        } else {
+                                                                            return d.r * (d.values[j].cumValue / d.value);
+                                                                        }
+                                                                    }
+                                                                })
+                                                                        .startAngle(0)
+                                                                        .endAngle(360);
+
+                                                                node.append("path")
+                                                                        .attr("d", arc)
+                                                                        .style("fill", function(d) {
+                                                                    if (j < d.values.length) {
+                                                                        return colorArc(d.values[j].name);
+                                                                    }
+                                                                })
+                                                                        .style("opacity", 0.0)
+                                                                        .transition()
+                                                                        .delay(1000)
+                                                                        .duration(2000)
+                                                                        .style("opacity", 1)
+                                                                        ;
+
+                                                                j++;
+                                                            }
+                                                        }
+
+                                                        function mouseover(d) {
+                                                            html = "<table><thead>";
+                                                            html += "<tr class='stathead'><th class='{sorter: false}' colspan='3'>" + d.itemName + "</th></tr>";
+                                                            html += "<tr class='colhead'><th title='Name'>Name</th><th title='Value' align='right'>Value</th><th title='Color' align='right'>Fill</th></tr></thead><tbody>";
+                                                            $(d.values).each(function(i, v) {
+                                                                html += "<tr><td title='" + v.name + "'>" + (v.name).substring(0, 18) + "</td><td align='right'>" + v.value + "</td><td class='text-align:cente;'><div class='pill' style='background:" + colorArc(v.name) + ";'>&nbsp;</div></td></tr>";
+                                                            });
+                                                            html += "</tbody></table>";
+
+                                                            table = "";
+                                                            if (d.type == "uni") {
+                                                                table = "#foTableUni";
+                                                            }
+                                                            if (d.type == "country") {
+                                                                table = "#foTable" + d.parentName;
+                                                            }
+                                                            if (d.type == "region") {
+                                                                table = "#foTable" + d.itemName;
+                                                            }
+                                                            if (d.type == "world") {
+                                                                table = "#foTableSwitzerland";
+                                                            }
+
+                                                            if (table != "") {
+                                                                if (table == "#foTableUni") {
+                                                                    $(table).append(html);
+                                                                } else {
+                                                                    $(table).empty().append(html);
+                                                                }
+
+                                                                $(table).tablecloth({
+                                                                    theme: "default",
+                                                                    striped: true,
+                                                                    sortable: true,
+                                                                    condensed: true
+                                                                });
+
+                                                            }
+                                                        }
+
+
+
+
+                                                        function animateDimensionData() {
+                                                            dimension = $('#dimensions').val();
+                                                            if (dimension == "year") {
+                                                                if ($('#years :selected').length > 0) {
+                                                                    dimOptions = $('#years :selected');
+                                                                } else {
+                                                                    dimOptions = $('#years option');
+                                                                }
+                                                            }
+                                                            if (dimension == "source") {
+                                                                if ($('#sources option :selected').length > 0) {
+                                                                    dimOptions = $('#sources  :selected');
+                                                                } else {
+                                                                    dimOptions = $('#sources option');
+                                                                }
+                                                            }
+                                                            if (dimension == "scheme") {
+                                                                if ($('#schemes :selected').length > 0) {
+                                                                    dimOptions = $('#schemes :selected');
+                                                                } else {
+                                                                    dimOptions = $('#schemes option');
+                                                                }
+                                                            }
+                                                            if (dimension == "discipline") {
+                                                                if ($('#disciplines :selected').length > 0) {
+                                                                    dimOptions = $('#disciplines :selected');
+                                                                } else {
+                                                                    dimOptions = $('#disciplines option');
+                                                                }
+                                                            }
+
+                                                            $('#dimName').empty().append($('#dimensions :selected').text());
+                                                            $('#dimVal').empty();
+
+                                                            // fade out the arcs
+                                                            d3.selectAll("path").transition().style("opacity", 0.1)
+
+
+                                                            $(dimOptions).each(function(k, dimOption) {
+                                                                $('#dimVal').append("<div class='col-sm-2 label' style='background:" + colorArc(dimOption.value) + ";'>" + dimOption.text + "</div>");
+                                                                $('#dimVal .label :last').fadeOut().delay(k * 2000).fadeIn('slow');
+                                                                // ingnore the Select All option
+                                                                if (dimOption.value != -1) {
+                                                                    d3.selectAll("circle").transition()
+                                                                            .delay(k * 2000)
+                                                                            .duration(2000)
+                                                                            .ease("linear")
+                                                                            .style("opacity", 1)
+                                                                            .style("fill", colorArc(dimOption.value))
+                                                                            .attr("r", function(d) {
+                                                                        newR = 0;
+                                                                        $(d.values).each(function(j, value) {
+                                                                            if (dimOption.text == value.name) {
+                                                                                newR = d.r * 0.5 * (value.value) / (d.value / dimOptions.length);
+                                                                            }
+                                                                        });
+                                                                        return newR;
+
+                                                                    });
+                                                                }
+                                                            })
+
+                                                            // finally put all the values back to the total
+                                                            d3.selectAll("circle").transition()
+                                                                    .delay((dimOptions.length * 2000))
+                                                                    .style("fill", "white")
+                                                                    .style("opacity", 0.1)
+                                                                    .attr("r", function(d) {
+                                                                return d.r;
+                                                            });
+                                                            // bring back the arcs
+                                                            d3.selectAll("path")
+                                                                    .transition()
+                                                                    .delay((dimOptions.length * 2000))
+                                                                    .style("opacity", 1);
+
+
+                                                        }
+
+
+                                                        function setColor(dimOptions) {
+                                                            domainArray = [];
+                                                            $(dimOptions).each(function(k, val) {
+                                                                domainArray.push(val.value);
+                                                            });
+
+                                                            colorOption = parseInt($('#colors').val());
+
+
+
+                                                            switch (colorOption)
+                                                            {
+                                                                case 1:
+                                                                    color1 = colorbrewer.Greens[8];
+                                                                    break;
+                                                                case 2:
+                                                                    color1 = colorbrewer.Blues[8];
+                                                                    break;
+                                                                case 3:
+                                                                    color1 = colorbrewer.Reds[8];
+                                                                    break;
+                                                                case 4:
+                                                                    color1 = colorbrewer.Oranges[8];
+                                                                    break;
+                                                                case 5:
+                                                                    color1 = colorbrewer.Purples[8];
+                                                                    break;
+                                                                default:
+                                                                    color1 = colorbrewer.Oranges[8];
+                                                                    break;
+                                                            }
+
+                                                            console.log(color1);
+                                                            colorArc = d3.scale.ordinal().domain(domainArray).range(color1);
+                                                        }
+
+
+                                                        // create the individual bubbles from the data
+                                                        // and for a specific region
+                                                        function updateBubble(region) {
+
+                                                            svg = svgSwitzerland;
+                                                            if (region == "Americas") {
+                                                                svg = svgAmericas;
+                                                                dims = americas;
+                                                            }
+                                                            if (region == "Europe") {
+                                                                svg = svgEurope;
+                                                                dims = europe;
+                                                            }
+                                                            if (region == "Asia") {
+                                                                svg = svgAsia;
+                                                                dims = asia;
+                                                            }
+                                                            if (region == "Africa") {
+                                                                svg = svgAfrica;
+                                                                dims = africa;
+                                                            }
+                                                            if (region == "Switzerland") {
+                                                                svg = svgSwitzerland;
+                                                                dims = switzerland;
+                                                            }
+
+
+                                                            var node = svg.selectAll(".node")
+                                                                    .data(bubble.nodes(classes(root, region))
+                                                                    .filter(function(d) {
+                                                                //        console.log(d);
+                                                                return !d.children;
+                                                            }))
+                                                                    .enter().append("g")
+                                                                    .attr("class", "node")
+                                                                    .attr("type", function(d) {
+                                                                return d.type
+                                                            })
+                                                                    .attr("item_id", function(d) {
+                                                                return d.item_id
+                                                            })
+                                                                    .attr("name", function(d) {
+                                                                return d.itemName
+                                                            })
+                                                                    .attr("parent", function(d) {
+                                                                return d.parentName
+                                                            })
+                                                                    //                                                   .on("mouseover", mouseover)
+                                                                    .on("mouseout", function(d) {
+                                                                //$('#dimData').empty();
+                                                            })
+                                                                    .attr("transform", function(d) {
+                                                                if (d.type == "world") {
+                                                                    // set the Switzerland node to its defaul posiition
+                                                                    return "translate(" + (d.x) + "," + (d.x) + ")";
+                                                                } else {
+                                                                    // start all other nodes in the centre of the page
+                                                                    return "translate(" + (dims[2] / 2) + "," + (dims[3] / 2) + ")";
+                                                                }
+                                                            });
+
+                                                            // add am html title to each node (acts as a tooltip)
+                                                            node.append("title")
+                                                                    .text(function(d) {
+                                                                return d.itemName + ": " + format(d.value);
+                                                            });
+
+
+                                                            if (selectedItem.type == "region") {
+                                                                var regions = svg.selectAll(".node")
+                                                                        .filter(function(d) {
+                                                                    //        console.log(d);
+                                                                    return d.type == "region";
+                                                                })
+                                                                        .append("rect");
+                                                            }
+
+
+                                                            // create the circular bubble itself
+                                                            node.append("circle")
+                                                                    .attr("r", function(d) {
+                                                                if (d.type == "world") {
+                                                                    return d.r / 1.25;
+                                                                } else {
+                                                                    return d.r / 8;
+                                                                }
+                                                            })
+                                                                    .style("opacity", 0.1)
+                                                                    .style("fill", "white")
+                                                                    .on("click", click)  // respond when the user clicks a circle
+                                                                    .transition()
+                                                                    .duration(2000)
+                                                                    .style("opacity", 0.1)
+                                                                    .attr("r", function(d) {
+                                                                // set the radius of bubbles to 1/8th of the final final
+                                                                return d.r / 1.25;  // animates the circle radius from 1.8th to full size over 2 seconds and moves opactiy from 0.1 to 1
+                                                            });
+
+
+                                                            getArc(node);
+
+
+                                                            // add text to centre of bubble and trim the length so it fits inside the circle
+                                                            node.append("text")
+                                                                    .attr("dy", ".3em")
+                                                                    .style("text-anchor", "middle")
+                                                                    .text(function(d) {
+                                                                if (d.itemName) {
+                                                                    return d.itemName.substring(0, d.r / 3);
+                                                                }
+                                                            })
+                                                                    .on("click", click)  // respond when the user clicks a circle
+                                                                    ;
+
+                                                            // animate the bubble nodes from the centre of the page to their final position over 2 seconds with a bounce effect
+                                                            d3.selectAll("g").transition()
+                                                                    .duration(2000)
+                                                                    .attr("transform", function(d) {
+                                                                return "translate(" + (d.x) + "," + (d.y) + ")";
+                                                            }).ease("bounce");
+
+                                                        }
+                                                        ;
+
+
+                                                        // respond when a bubble circle is clicked
+                                                        function click(d) {
+                                                            // set the sleected item so we know if the last item clicked was a region, country or uni
+                                                            selectedItem = d;
+
+                                                            if (d.type == "world") {
+                                                                $('#bc').empty();
+                                                            } else {
+                                                                // update the breadcrumb
+                                                                spanId = "bc-" + d.type;
+                                                                //$("#" + spanId).remove()
+                                                                $('#bc').append("<div id='" + spanId + "' class='col-sm-2 label' style='background:" + color(d.type) + "'>" + d.itemName + "<span class='badge'>" + d.value + "</span></div>");
+                                                            }
+                                                            if (d.type == "uni") {
+                                                                // get the list of students at this uni
+                                                                getStudents(d);
+                                                            } else {
+                                                                // redraw the chart based on the selected region or country
+                                                                if (selectedItem.type == "region") {
+                                                                    region = selectedItem.itemName;
+                                                                }
+                                                                if (selectedItem.type == "country") {
+                                                                    region = selectedItem.parentName;
+                                                                }
+
+                                                                setupBubble(region);
+                                                                updateBubble(region);
+                                                            }
+                                                            mouseover(d);
+
+                                                        }
+                                                        ;
+
+                                                        // Returns a flattened hierarchy containing all leaf nodes under the root.
+                                                        function classes(data, region) {
+                                                            var classes = [];
+                                                            var smallSites = [];
+
+                                                            // this function iterates recursively over the data to build a flat list of nodes (classes) for the bubbles
+                                                            function recurse(name, node, region) {
+                                                                minSize = $('#minSize').val() - 1;
+
+                                                                // first check if the current object has any children
+                                                                // regions and countries have children
+                                                                // unis do not have children
+                                                                if (node.children) {
+                                                                    // the root node is labelled "Switzerland"
+                                                                    if (node.type == "world") {
+                                                                        if (selectedItem.type == "world") {
+                                                                            itemValue = parseInt(root.number);
+                                                                        } else {
+                                                                            itemValue = selectedItem.value;
+                                                                        }
+                                                                        if (region == "Switzerland") {
+                                                                            classes.push({parentName: name, itemName: node.name, value: itemValue / 10, x: width / 2, y: height / 2, type: node.type, item_id: node.item_id, values: node.values});
+                                                                        }
+
+                                                                    }
+
+
+                                                                    // only push the selected region
+                                                                    if (node.type == "region" && node.name == region) {
+                                                                        console.log(node.type + " :" + node.name + " : " + region);
+                                                                        // if the item is a region then show them all when Switzerland is chosen
+                                                                        // hide regions if a region is clicked
+                                                                        if (selectedItem.type == "world") {
+                                                                            classes.push({parentName: name, itemName: node.name, value: node.number, type: node.type, item_id: node.item_id, values: node.values});
+                                                                        }
+                                                                        // selected item is a region then show the other regions
+                                                                        //        if (selectedItem.type == "region"  && selectedItem.itemName != node.name) {
+                                                                        //            classes.push({parentName: name, itemName: node.name, value: node.number, type: node.type, item_id: node.item_id, values: node.values});
+                                                                        //        }
+                                                                        // selected item is a country then show the other regions
+                                                                        if (selectedItem.type == "country" && selectedItem.parentName != node.name) {
+                                                                            classes.push({parentName: name, itemName: node.name, value: node.number, type: node.type, item_id: node.item_id, values: node.values});
+                                                                        }
+
+
+                                                                    }
+                                                                    // if the item is a country then only show them for the region that was chosen
+                                                                    // only push countries fromt eh selected region
+                                                                    if (node.type == "country" && name == region) {
+                                                                        if (selectedItem.type == "region" && name == selectedItem.itemName) {
+                                                                            if (node.number > minSize) {
+                                                                                classes.push({parentName: name, itemName: node.name, value: node.number, type: node.type, values: node.values, item_id: node.item_id});
+                                                                            } else {
+                                                                                smallSites.push(node);
+                                                                            }
+                                                                        }
+                                                                        // selected item is a country then show the other countries for this region
+                                                                        if (selectedItem.type == "country" && (selectedItem.itemName != node.name && selectedItem.parentName == name)) {
+                                                                            if (node.number > minSize) {
+                                                                                classes.push({parentName: name, itemName: node.name, value: node.number, type: node.type, item_id: node.item_id, values: node.values});
+                                                                            } else {
+                                                                                smallSites.push(node);
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    // go through all the child items of the current item
+                                                                    node.children.forEach(function(child) {
+                                                                        recurse(node.name, child, region);
+                                                                    });
+
+                                                                } else {
+                                                                    // if the object has no children then it is a uni; only show it if the selected item is a country
+                                                                    // and the uni is from teh selected country 
+                                                                    if (node.type == "uni" && selectedItem.type == "country" && name == selectedItem.itemName) {
+                                                                        if (node.number > minSize) {
+                                                                            classes.push({parentName: name, uni_code: node.uni_code, itemName: node.name, value: node.number, values: node.values, type: node.type, item_id: node.item_id});
+                                                                        } else {
+                                                                            smallSites.push(node);
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            // start with the first object
+                                                            recurse(null, data, region);
+                                                            // show the small sites in a table          
+                                                            if (smallSites.length > 0) {
+                                                                showSmallSites(smallSites);
+                                                            }
+                                                            // return the array of nodes
+                                                            return {children: classes};
+                                                        }
+
+
+                                                        function showSmallSites(nodes) {
+                                                            console.log(nodes);
+                                                            if (selectedItem.type == "region") {
+                                                                name = selectedItem.itemName;
+                                                            } else if (selectedItem.type == "country") {
+                                                                name = selectedItem.parentName;
+                                                            }
+                                                            html = "<table><thead>";
+                                                            html += "<tr class='stathead'><th class='{sorter: false}' colspan='3'>" + name + "</th></tr>";
+                                                            html += "<tr class='colhead'><th title='Name'>Type</th><th title='Name'>Name</th><th title='Value' align='right'>Value</th></tr></thead><tbody>";
+                                                            $(nodes).each(function(i, v) {
+                                                                if (v.name != null) {
+                                                                    html += "<tr><td>" + v.type.substring(0, 1) + "</td><td title='" + v.name + "'>" + (v.name).substring(0, 18) + "</td><td align='right'>" + v.number + "</td></tr>";
+                                                                }
+                                                            });
+                                                            html += "</tbody></table>";
+                                                            table = "#smallTable" + name;
+                                                            $(table).empty().append(html);
+                                                            $(table).tablecloth({
+                                                                theme: "default",
+                                                                striped: true,
+                                                                sortable: true,
+                                                                condensed: true
+                                                            });
+                                                        }
+
+
+
+
+                                                        // calls this function to get a list of students for the current uni
+                                                        function getStudents(node) {
+                                                            // find the name of the selected Uni and show it on the page
+                                                            html = node.itemName;
+                                                            $("#selectedUni").empty().append(html);
+
+                                                            // build the search query from the selected filters
+                                                            selectStr = "?uni=" + node.uni_code + "&";
+                                                            selectArray = getSelectString();
+                                                            if ($(selectArray).length > 0) {
+                                                                $(selectArray).each(function(i, selStr) {
+                                                                    selectStr += selStr + "&";
+                                                                })
+                                                            }
+                                                            ;
+
+                                                            // ajax call to get the studnet data
+                                                            $.ajax({
+                                                                url: "studentdetailtarget.php" + selectStr,
+                                                                method: 'GET',
+                                                                success: function(data) {
+                                                                    // create the table header   
+                                                                    html = "<table id='unisTable'><thead><tr class='colhead'>";
+                                                                    html += "<th>ID</th>";
+                                                                    html += "<th>Submission Year</th>";
+                                                                    html += "<th>Target</th>";
+                                                                    html += "<th>Zip Code</th>";
+                                                                    html += "<th>Country</th>";
+                                                                    html += "<th>Main Discipline</th>";
+                                                                    html += "<th>Scheme</th>";
+                                                                    html += "</tr></thead><tbody>";
+
+                                                                    // read the data response and add a row to the table for each student
+                                                                    var json = data;
+                                                                    $(json).each(function(i, val) {
+                                                                        html += "<tr>";
+                                                                        html += "<td>" + val.id + "</td>";
+                                                                        html += "<td>" + val.submission_year + "</td>";
+                                                                        html += "<td>" + val.target + "</td>";
+                                                                        html += "<td>" + val.destination_zip_code + "</td>";
+                                                                        html += "<td>" + val.destination_country + "</td>";
+                                                                        html += "<td>" + val.main_discipline + "</td>";
+                                                                        html += "<td>" + val.scheme + "</td>";
+                                                                        html += "</tr>";
+                                                                    });
+                                                                    // close off the table
+                                                                    html += "</tr></tbody></table>";
+
+                                                                    // add the table to the page
+                                                                    $("#unis").empty().append(html);
+
+                                                                    $("#unisTable").tablecloth({
+                                                                        theme: "paper",
+                                                                        striped: true,
+                                                                        sortable: true,
+                                                                        condensed: true
+                                                                    });
+
+                                                                }
+                                                            });
+                                                        }
+                                                        ;
+
+
+                                                        // get the core data for the filters
+                                                        function getFilters() {
+                                                            $("#zoom").change(function() {
+                                                                $('#zoom :selected').each(function(i, selected) {
+                                                                    zoomFactor = $(selected).val();
+                                                                    updateBubble("Americas");
+                                                                    updateBubble("Europe");
+                                                                    updateBubble("Switzerland");
+                                                                    updateBubble("Asia");
+                                                                    updateBubble("Africa");
+                                                                    ;
+                                                                });
+                                                                getCountries(regions);
+                                                            });
+                                                            $("#regions").change(function() {
+                                                                var regions = [];
+                                                                $('#regions :selected').each(function(i, selected) {
+                                                                    regions[i] = $(selected).val();
+                                                                });
+                                                                getCountries(regions);
+                                                            });
+                                                            $("#countries").change(function() {
+                                                                var countries = [];
+                                                                $('#countries :selected').each(function(i, selected) {
+                                                                    countries[i] = $(selected).val();
+                                                                });
+                                                                getTarget(countries);
+                                                                getSource(countries);
+                                                            });
+                                                            $.ajax({
+                                                                url: "getFilter.php?filter=regions",
+                                                                method: 'GET',
+                                                                success: function(data) {
+                                                                    $(data).each(function(i, val) {
+                                                                        $('#regions').append("<option value='" + val.id + "'>" + val.name + "</option>")
+                                                                    })
+                                                                }
+                                                            });
+
+                                                            $.ajax({
+                                                                url: "getFilter.php?filter=discipline",
+                                                                method: 'GET',
+                                                                success: function(data) {
+                                                                    $(data).each(function(i, val) {
+                                                                        $('#disciplines').append("<option value='" + val.id + "'>" + val.name + "</option>")
+                                                                    })
+                                                                    $('#disciplines').multiselect({
+                                                                        maxHeight: 400,
+                                                                        enableFiltering: true,
+                                                                        includeSelectAllOption: true,
+                                                                        selectAllText: "Select All",
+                                                                        selectAllValue: '-1',
+                                                                        buttonText: function(options, select) {
+                                                                            if (options.length == 0) {
+                                                                                return 'None selected <b class="caret"></b>';
+                                                                            } else if (options.length > 3) {
+                                                                                return options.length + ' selected  <b class="caret"></b>';
+                                                                            } else {
+                                                                                var selected = '';
+                                                                                options.each(function() {
+                                                                                    selected += ($(this).text()).substr(0, 5) + '.., ';
+                                                                                });
+                                                                                return selected.substr(0, selected.length - 2) + ' <b class="caret"></b>';
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                }
+                                                            });
+                                                            $.ajax({
+                                                                url: "getFilter.php?filter=years",
+                                                                method: 'GET',
+                                                                success: function(data) {
+                                                                    $(data).each(function(i, val) {
+                                                                        $('#years').append("<option value='" + val.id + "'>" + val.name + "</option>")
+                                                                    })
+                                                                    setColor($('#years option'));
+                                                                }
+                                                            });
+
+                                                            $.ajax({
+                                                                url: "getFilter.php?filter=scheme",
+                                                                method: 'GET',
+                                                                success: function(data) {
+                                                                    $(data).each(function(i, val) {
+                                                                        $('#schemes').append("<option value='" + val.id + "'>" + val.name + "</option>")
+                                                                    })
+                                                                }
+                                                            });
+
+                                                        }
+                                                        ;
+
+                                                        // get a list of countries
+                                                        function getCountries(regions) {
+                                                            if (regions == "") {
+                                                                regionStr = "";
+                                                            } else {
+                                                                regionStr = "&region=" + regions;
+                                                            }
+                                                            $('#countries').find('option').remove().end();
+                                                            $.ajax({
+                                                                url: "getFilter.php?filter=countries" + regionStr,
+                                                                method: 'GET',
+                                                                success: function(data) {
+                                                                    $(data).each(function(i, val) {
+                                                                        $('#countries').append("<option value='" + val.id + "'>" + val.name + "</option>")
+                                                                    })
+                                                                    $('#countries').multiselect({
+                                                                        maxHeight: 400,
+                                                                        enableFiltering: true,
+                                                                        includeSelectAllOption: true,
+                                                                        selectAllText: "Select All",
+                                                                        selectAllValue: '-1'
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
+
+
+                                                        // get a list of source unis filtered by the selected coutnries
+                                                        function getSource(countries) {
+                                                            if (countries == "") {
+                                                                countryStr = "";
+                                                            } else {
+                                                                countryStr = "&country=" + countries;
+                                                            }
+                                                            $('#sources').find('option').remove().end();
+                                                            $.ajax({
+                                                                url: "getFilter.php?filter=source" + countryStr,
+                                                                method: 'GET',
+                                                                success: function(data) {
+                                                                    $(data).each(function(i, val) {
+                                                                        $('#sources').append("<option value='" + val.id + "'>" + val.name + "</option>")
+                                                                    })
+                                                                    $('#sources').multiselect({
+                                                                        maxHeight: 240,
+                                                                        buttonContainer: '<span class="dropdown" />',
+                                                                        enableFiltering: true,
+                                                                        includeSelectAllOption: true,
+                                                                        selectAllText: "Select All",
+                                                                        selectAllValue: '-1',
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
+
+
+                                                        // get a list of destination countries filtered by the selected countries
+                                                        function getTarget(countries) {
+                                                            if (countries == "") {
+                                                                countryStr = "";
+                                                            } else {
+                                                                countryStr = "&country=" + countries;
+                                                            }
+                                                            $('#targets').find('option').remove().end();
+                                                            $.ajax({
+                                                                url: "getFilter.php?filter=target" + countryStr,
+                                                                method: 'GET',
+                                                                success: function(data) {
+                                                                    $(data).each(function(i, val) {
+                                                                        $('#targets').append("<option value='" + val.id + "'>" + val.name + "</option>")
+                                                                    })
+                                                                    $('#targets').multiselect({
+                                                                        maxHeight: 400,
+                                                                        enableFiltering: true,
+                                                                        includeSelectAllOption: true,
+                                                                        selectAllText: "Select All",
+                                                                        selectAllValue: '-1',
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
+
+
+                                                        // redraw the page based on the current filters
+                                                        function refreshView() {
+                                                            selectStr = "";
+                                                            selectArray = getSelectString();
+                                                            if ($(selectArray).length > 0) {
+                                                                $(selectArray).each(function(i, selStr) {
+                                                                    selectStr += selStr + "&";
+                                                                })
+                                                            }
+                                                            ;
+                                                            $('#bc').empty();
+                                                            $('#foTableUni').empty();
+                                                            getData(selectStr);
+                                                        }
+
+
+                                                        // build the query string for the selected filters
+                                                        function getSelectString() {
+                                                            var selectArray = [];
+                                                            var target = [];
+                                                            $('#targets :selected').each(function(i, selected) {
+                                                                if ($(selected).val() != -1) {
+                                                                    target[i] = $(selected).val();
+                                                                }
+                                                            });
+                                                            if (target.length > 0) {
+                                                                selectArray.push("target=" + target);
+                                                            }
+                                                            ;
+                                                            var source = [];
+                                                            $('#sources :selected').each(function(i, selected) {
+                                                                if ($(selected).val() != -1) {
+                                                                    source[i] = $(selected).val();
+                                                                }
+                                                            });
+                                                            if (source.length > 0) {
+                                                                selectArray.push("source=" + source);
+                                                            }
+                                                            ;
+                                                            var year = [];
+                                                            $('#years :selected').each(function(i, selected) {
+                                                                if ($(selected).val() != -1) {
+                                                                    year[i] = $(selected).val();
+                                                                }
+                                                            });
+                                                            if (year.length > 0) {
+                                                                selectArray.push("year=" + year);
+                                                            }
+                                                            ;
+                                                            var disc = [];
+                                                            $('#disciplines :selected').each(function(i, selected) {
+                                                                if ($(selected).val() != -1) {
+                                                                    disc[i] = $(selected).val();
+                                                                }
+                                                            });
+                                                            if (disc.length > 0) {
+                                                                selectArray.push("disc=" + disc);
+                                                            }
+                                                            ;
+                                                            var scheme = [];
+                                                            $('#schemes :selected').each(function(i, selected) {
+                                                                if ($(selected).val() != -1) {
+                                                                    scheme[i] = $(selected).val();
+                                                                }
+                                                            });
+                                                            if (scheme.length > 0) {
+                                                                selectArray.push("scheme=" + scheme);
+                                                            }
+                                                            ;
+                                                            var country = [];
+                                                            $('#countries :selected').each(function(i, selected) {
+                                                                if ($(selected).val() != -1) {
+                                                                    country[i] = $(selected).val();
+                                                                }
+                                                            });
+                                                            if (country.length > 0) {
+                                                                selectArray.push("country=" + country);
+                                                            } else {
+                                                                // only add regions if no countries are selected
+                                                                var region = [];
+                                                                $('#regions :selected').each(function(i, selected) {
+                                                                    if ($(selected).val() != -1) {
+                                                                        region[i] = $(selected).val();
+                                                                    }
+                                                                });
+                                                                if (region.length > 0) {
+                                                                    selectArray.push("region=" + region);
+                                                                }
+                                                                ;
+                                                            }
+                                                            ;
+
+                                                            return selectArray;
+                                                        }
+                                                        ;
+
+
+                                                        // run the php script to get the studnet data
+                                                        function getData(selectStr) {
+                                                            dimension = $('#dimensions').val();
+                                                            $.ajax({
+                                                                url: "studentdatatargetdim.php?dimension=" + dimension + "&" + selectStr,
+                                                                method: 'GET',
+                                                                success: function(data) {
+                                                                    root = data;
+                                                                    selectedItem.value = parseInt(root.number);
+                                                                    selectedItem.type = "world";
+
+                                                                    setColor($("#" + dimension + "s option"));
+
+
+                                                                    $.each(regions, function(i, region) {
+                                                                        setupBubble(region);
+                                                                        updateBubble(region);
+                                                                    })
+                                                                }
+                                                            });
+
+
+                                                        }
+
+                                                        function reset(region) {
+                                                            selectedItem.value = parseInt(root.number);
+                                                            selectedItem.type = "world";
+                                                            $.each(regions, function(i, region) {
+                                                                setupBubble(region);
+                                                                updateBubble(region);
+                                                            })
+
+
+                                                        }
+        </script>
+</body>
+</html>
